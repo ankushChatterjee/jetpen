@@ -1,0 +1,101 @@
+version: '3.6'
+
+services:
+    nginx:
+        image: jetpen/nginx
+        networks:
+            - jetpen-net
+        ports:
+            - "8080:8080"
+    rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+            - "5672:5672"
+            - "15672:15672"
+        networks:
+            - jetpen-net
+    smtp4dev:
+        image: rnwood/smtp4dev
+        ports:
+            - "1080:80"
+            - "2525:25"
+        networks:
+            - jetpen-net
+    postgres:
+        image: postgres
+        environment:
+            - POSTGRES_PASSWORD=postgres
+        ports:
+            - "5432:5432"
+        networks:
+            - jetpen-net
+    jetpen-email-service:
+        image: jetpen/email-service
+        environment:
+            - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+            - MAIL_HOST=smtp4dev
+            - MAIL_PORT=25
+            - MAIL_USERNAME=username
+            - MAIL_PASSWORD=password
+            - MAIL_MAX_SEND=4
+            - RABBITMQ_QUEUE_NAME=emails
+        networks:
+            - jetpen-net
+        depends_on: 
+            - postgres
+            - rabbitmq
+            - smtp4dev
+    jetpen-newsletter-service:
+        image: jetpen/newsletter-service
+        environment:
+            - DB_HOST=postgres
+            - DB_USERNAME=postgres
+            - DB_PORT=5432
+            - DB_NAME=postgres
+            - DB_PASSWORD=postgres
+            - HOST_PORT=3000
+            - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+            - RABBITMQ_QUEUE_NAME=emails
+            - JWT_SECRET=secretdontreveal
+        networks:
+            - jetpen-net
+        depends_on: 
+            - postgres
+            - rabbitmq
+            - smtp4dev
+    jetpen-user-service:
+        image: jetpen/user-service
+        environment:
+            - DB_HOST=postgres
+            - DB_USERNAME=postgres
+            - DB_PORT=5432
+            - DB_NAME=postgres
+            - DB_PASSWORD=postgres
+            - HOST_PORT=3000
+            - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+            - RABBITMQ_QUEUE_NAME=emails
+            - JWT_SECRET=secretdontreveal
+        networks:
+            - jetpen-net
+        depends_on: 
+            - postgres
+            - rabbitmq
+            - smtp4dev
+    jetpen-sub-service:
+        image: jetpen/sub-service
+        environment:
+            - DB_HOST=postgres
+            - DB_USERNAME=postgres
+            - DB_PORT=5432
+            - DB_NAME=postgres
+            - DB_PASSWORD=postgres
+            - HOST_PORT=3000
+        networks:
+            - jetpen-net
+        depends_on: 
+            - postgres
+            - rabbitmq
+            - smtp4dev
+networks:
+    jetpen-net:
+        driver: bridge
