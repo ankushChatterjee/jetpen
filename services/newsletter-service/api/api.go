@@ -7,6 +7,7 @@ import (
 	"github.com/ankushChatterjee/jetpen/newsletter-service/pkg/rabbitmq"
 	"github.com/ankushChatterjee/jetpen/newsletter-service/pkg/utils"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	jwtware "github.com/gofiber/jwt/v2"
 )
 
@@ -14,11 +15,13 @@ func CreateApi() *fiber.App {
 	app := fiber.New()
 	db := datastore.GetConnection()
 	rabbitmq.Init()
+	app.Use(cors.New())
+
+	app.Get("/newsletter/:id", func(c *fiber.Ctx) error { return newsletter.GetSingleNewsLetter(c, db) })
 	app.Use(jwtware.New(jwtware.Config{
 		SigningKey: []byte(utils.GetEnvVar("JWT_SECRET")),
 	}))
-
-	app.Get("/newsletters/:owner", func(c *fiber.Ctx) error { return newsletter.GetNewsLetters(c, db) })
+	app.Get("/newsletters", func(c *fiber.Ctx) error { return newsletter.GetNewsLetters(c, db) })
 	app.Post("/newsletter/create", func(c *fiber.Ctx) error { return newsletter.CreateNewsLetter(c, db) })
 	app.Post("/newsletter/delete", func(c *fiber.Ctx) error { return newsletter.DeleteNewsletter(c, db) })
 	app.Post("/newsletter/edit-name", func(c *fiber.Ctx) error { return newsletter.EditNewsletterName(c, db) })

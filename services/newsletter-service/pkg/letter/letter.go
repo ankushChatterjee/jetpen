@@ -2,6 +2,7 @@ package letter
 
 import (
 	"database/sql"
+	uuid "github.com/satori/go.uuid"
 	"log"
 	"strconv"
 	"time"
@@ -23,6 +24,7 @@ type DraftRequest struct {
 	Id      string `json:"id"`
 	Subject string `json:"subject"`
 	Content string `json:"content"`
+	Nid 	string `json:"nid"`
 }
 
 type DeleteRequest struct {
@@ -55,6 +57,7 @@ func CreateLetter(c *fiber.Ctx, db *sql.DB) error {
 	letter := new(models.Letter)
 	letter.Content = req.Content
 	letter.Nid = req.Nid
+	letter.Id = uuid.NewV4().String()
 	letter.Owner = username
 	letter.IsPublished = req.IsPublished
 	letter.Subject = req.Subject
@@ -66,20 +69,22 @@ func CreateLetter(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 	if letter.IsPublished {
-		subs, err := datastore.GetSubEmails(req.Nid, db)
+		subs, err := datastore.GetSubsAndTokens(req.Nid, db)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 				"error": "Cannot get sub",
 			})
 		}
-		err = rabbitmq.PublishLetter(subs, req.Subject, req.Content)
+		err = rabbitmq.PublishLetter(subs, req.Subject, req.Content, letter.Nid)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 				"error": "Cannot Send letter",
 			})
 		}
 	}
-	return c.SendStatus(fiber.StatusOK)
+	return c.JSON(&fiber.Map{
+		"id":letter.Id,
+	})
 }
 
 func SendDraftLetter(c *fiber.Ctx, db *sql.DB) error {
@@ -113,16 +118,16 @@ func SendDraftLetter(c *fiber.Ctx, db *sql.DB) error {
 		err := datastore.UpdateLetterContentSubjectAndPublish(req.Id, req.Subject, req.Content, db)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
-				"error": "Cannot udpate letter",
+				"error": "Cannot update letter",
 			})
 		}
-		subs, err := datastore.GetSubEmails(req.Id, db)
+		subs, err := datastore.GetSubsAndTokens(req.Nid, db)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 				"error": "Cannot get sub",
 			})
 		}
-		err = rabbitmq.PublishLetter(subs, req.Subject, req.Content)
+		err = rabbitmq.PublishLetter(subs, req.Subject, req.Content, req.Nid)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
 				"error": "Cannot Send letter",

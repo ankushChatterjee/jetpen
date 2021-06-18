@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 
@@ -121,5 +122,20 @@ func GetTempUser(username string, db *sql.DB) (*models.TempUser, error) {
 	default:
 		failOnError(err, "Error Reading temp users")
 		return nil, err
+	}
+}
+
+func IsUsernameTaken(username string, db *sql.DB) (bool,error) {
+	sqlString := "SELECT exists (SELECT 1 FROM jetpen.users WHERE username = $1 LIMIT 1)"
+	var doesExist bool
+	row := db.QueryRow(sqlString, username)
+	switch err := row.Scan(&doesExist); err {
+	case sql.ErrNoRows:
+		return doesExist, errors.New("error in searching DB")
+	case nil:
+		return doesExist, nil
+	default:
+		failOnError(err, "Error Reading Users")
+		return false, err
 	}
 }

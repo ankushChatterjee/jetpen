@@ -11,7 +11,6 @@ import (
 
 type EMailMessage struct {
 	EmailContent string   `json:"emailContent"`
-	SendTo       []string `json:"sendTo"`
 	Subject      string   `json:"subject"`
 	From         string   `json:"from"`
 	OwnerMail    string   `json:"ownerMail"`
@@ -51,7 +50,7 @@ func StartConsumer() {
 			err = json.Unmarshal([]byte(d.Body), &msg)
 			failOnError(err, "JSON Unmarshal failed")
 			log.Printf("Received a message: %s", msg)
-			err = sendEmail.SendEmail(msg.EmailContent, msg.SendTo, msg.Subject, msg.From, msg.OwnerMail)
+			err = sendEmail.SendEmail(msg.EmailContent, msg.Subject, msg.From, msg.OwnerMail)
 			failOnError(err, "Email send failed")
 		}
 	}()

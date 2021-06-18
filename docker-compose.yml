@@ -57,6 +57,7 @@ services:
             - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
             - RABBITMQ_QUEUE_NAME=emails
             - JWT_SECRET=secretdontreveal
+            - FRONTEND_HOST=http://localhost:3000
         networks:
             - jetpen-net
         depends_on: 
@@ -75,6 +76,7 @@ services:
             - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
             - RABBITMQ_QUEUE_NAME=emails
             - JWT_SECRET=secretdontreveal
+            - FRONTEND_HOST=http://localhost:3000
         networks:
             - jetpen-net
         depends_on: 

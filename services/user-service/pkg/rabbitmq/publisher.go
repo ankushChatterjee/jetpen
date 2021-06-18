@@ -11,9 +11,9 @@ import (
 
 var ch *amqp.Channel
 
-const VERIFICATION_EMAIL_SUBJECT = "Welcome to JetPen, Verify your email address."
-const VERIFICATION_EMAIL_CONTENT = "<h1>Welcome to Jetpen</h1><p>Go to <a href=\"%s\">%s</a></p>"
-const VERIFICATION_EMAIL_FROM = "JetPen <contact@jetpen.com>"
+const VerificationEmailSubject = "Welcome to JetPen, Verify your email address."
+const VerificationEmailContent = "<h1>Welcome to Jetpen</h1><p>Go to <a href=\"%s\">%s</a></p>"
+const VerificationEmailFrom = "JetPen <no-reply@jetpen.com>"
 
 func failOnError(err error, msg string) {
 	if err != nil {
@@ -35,11 +35,12 @@ func Init() {
 }
 
 func PublishVerificationEmail(to string, token string, username string) error {
-	url := utils.GetEnvVar("BASE_URL") + "/verify-email/?token=" + token + "&username=" + username
+	frontendHost := utils.GetEnvVar("FRONTEND_HOST")
+	url := utils.GetEnvVar("BASE_URL") + frontendHost + "/verify-email/?token=" + token + "&username=" + username
 	emaiData := map[string]string{
-		"emailContent": fmt.Sprintf(VERIFICATION_EMAIL_CONTENT, url, url),
-		"subject":      VERIFICATION_EMAIL_SUBJECT,
-		"from":         VERIFICATION_EMAIL_FROM,
+		"emailContent": fmt.Sprintf(VerificationEmailContent, url, url),
+		"subject":      VerificationEmailSubject,
+		"from":         VerificationEmailFrom,
 		"ownerMail":    to,
 	}
 	data, _ := json.Marshal(emaiData)

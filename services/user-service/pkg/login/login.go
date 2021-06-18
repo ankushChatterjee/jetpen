@@ -2,6 +2,7 @@ package login
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"time"
 
@@ -25,6 +26,7 @@ func Login(c *fiber.Ctx, db *sql.DB) error {
 			"error": "Form Data Error",
 		})
 	}
+	fmt.Println(details)
 	user, err := datastore.GetUser(details.Username, db)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{

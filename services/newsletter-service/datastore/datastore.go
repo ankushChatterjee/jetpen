@@ -72,17 +72,33 @@ func ExecuteSQL(sqlString string, db *sql.DB) error {
 }
 
 func InsertNewsletter(newsletter *models.Newsletter, db *sql.DB) error {
-	sqlString := "INSERT INTO jetpen.newsletter(name, description, owner) VALUES($1,$2,$3)"
-	_, err := db.Exec(sqlString, newsletter.Name, newsletter.Description, newsletter.Owner)
+	sqlString := "INSERT INTO jetpen.newsletter(id, name, description, owner) VALUES($1,$2,$3,$4)"
+	_, err := db.Exec(sqlString, newsletter.Id, newsletter.Name, newsletter.Description, newsletter.Owner)
 	failOnError(err, "Error inserting newsletter")
 	return err
 }
 
 func InsertLetter(letter *models.Letter, db *sql.DB) error {
-	sqlString := "INSERT INTO jetpen.letter(subject, owner, nid, content,\"isPublished\",\"PublishedAt\") values($1, $2, $3, $4, $5, $6)"
-	_, err := db.Exec(sqlString, letter.Subject, letter.Owner, letter.Nid, letter.Content, letter.IsPublished, letter.PublishedAt.Time)
+	sqlString := "INSERT INTO jetpen.letter(id,subject, owner, nid, content,\"isPublished\",\"PublishedAt\") values($1, $2, $3, $4, $5, $6, $7)"
+	_, err := db.Exec(sqlString, letter.Id, letter.Subject, letter.Owner, letter.Nid, letter.Content, letter.IsPublished, letter.PublishedAt.Time)
 	failOnError(err, "Error Inserting letter")
 	return err
+}
+
+func GetNewsLetter(id string, db *sql.DB) (*models.Newsletter, error) {
+	sqlString := "SELECT name, description, owner, \"CreatedAt\" from jetpen.newsletter WHERE id=$1"
+	newsletter := new(models.Newsletter)
+	row := db.QueryRow(sqlString, id)
+	switch err := row.Scan(&newsletter.Name, &newsletter.Description, &newsletter.Owner, &newsletter.CreatedAt); err {
+	case sql.ErrNoRows:
+		return nil, errors.New("Newsletter not found")
+	case nil:
+		return newsletter, nil
+	default:
+		failOnError(err, "Error getting newsletter")
+		return nil, err
+	}
+
 }
 
 func GetNewsLettersForUser(owner string, cursor string, limit int, db *sql.DB) ([]*models.Newsletter, *string, error) {
@@ -103,7 +119,7 @@ func GetNewsLettersForUser(owner string, cursor string, limit int, db *sql.DB) (
 		if err != nil {
 			return nil, nil, err
 		}
-		sqlString = "SELECT name, description, \"CreatedAt\",id from jetpen.newsletter WHERE \"CreatedAt\" <= $1 AND owner=$2 ORDER BY \"CreatedAt\" DESC LIMIT $3"
+		sqlString = "SELECT name, description, \"CreatedAt\",id from jetpen.newsletter WHERE \"CreatedAt\" < $1 AND owner=$2 ORDER BY \"CreatedAt\" DESC LIMIT $3"
 		rows, err = db.Query(sqlString, createdAt, owner, limit)
 		failOnError(err, "Error inserting newsletter")
 		if err != nil {
@@ -149,7 +165,7 @@ func GetLettersForNewsletter(nid string, cursor string, limit int, db *sql.DB) (
 			return nil, nil, err
 		}
 		log.Println(createdAt)
-		sqlString = "SELECT id, subject, \"CreatedAt\", \"PublishedAt\", \"isPublished\" FROM jetpen.letter WHERE \"CreatedAt\" <= $1 AND nid=$2 ORDER BY \"CreatedAt\" DESC LIMIT $3"
+		sqlString = "SELECT id, subject, \"CreatedAt\", \"PublishedAt\", \"isPublished\" FROM jetpen.letter WHERE \"CreatedAt\" < $1 AND nid=$2 ORDER BY \"CreatedAt\" DESC LIMIT $3"
 		rows, err = db.Query(sqlString, createdAt, nid, limit)
 		failOnError(err, "Error inserting newsletter")
 		if err != nil {
@@ -235,26 +251,49 @@ func UpdateNewsletterDescription(id string, description string, db *sql.DB) erro
 	return err
 }
 
-func GetSubEmails(nid string, db *sql.DB) ([]string, error) {
-	sqlString := "SELECT email FROM jetpen.subscription WHERE nid=$1"
+//func GetSubs(nid string, db *sql.DB) ([]string, error) {
+//	sqlString := "SELECT email FROM jetpen.subscription WHERE nid=$1"
+//	rows, err := db.Query(sqlString, nid)
+//	failOnError(err, "Error On get subscriptions")
+//	if err != nil {
+//		return nil, err
+//	}
+//	defer rows.Close()
+//	emails := make([]string, 0)
+//	for rows.Next() {
+//		email := ""
+//		err := rows.Scan(&email)
+//		failOnError(err, "Error Reading email of subscriber")
+//		if err != nil {
+//			return nil, err
+//		}
+//		emails = append(emails, email)
+//	}
+//	return emails, nil
+//}
+
+func GetSubsAndTokens(nid string, db *sql.DB) (map[string]string, error) {
+	sqlString := "SELECT email, subtoken FROM jetpen.subscription WHERE nid=$1"
 	rows, err := db.Query(sqlString, nid)
 	failOnError(err, "Error On get subscriptions")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	emails := make([]string, 0)
+	data := make(map[string]string)
 	for rows.Next() {
 		email := ""
-		err := rows.Scan(&email)
+		token := ""
+		err := rows.Scan(&email, &token)
 		failOnError(err, "Error Reading email of subscriber")
 		if err != nil {
 			return nil, err
 		}
-		emails = append(emails, email)
+		data[email] = token
 	}
-	return emails, nil
+	return data, nil
 }
+
 
 func GetNewsLetterOwner(nid string, db *sql.DB) (string, error) {
 	sqlString := "SELECT owner from jetpen.newsletter WHERE id=$1"

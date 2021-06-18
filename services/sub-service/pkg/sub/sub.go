@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/ankushChatterjee/jetpen/sub-service/datastore"
 	"github.com/ankushChatterjee/jetpen/sub-service/models"
+	"github.com/ankushChatterjee/jetpen/sub-service/pkg/utils"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -20,6 +21,13 @@ func AddSubscription(c *fiber.Ctx, db *sql.DB) error {
 			"error": "Form Data Error",
 		})
 	}
+
+	if !utils.ValidateEmail(req.Email) {
+		return c.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
+			"error": "Enter valid email",
+		})
+	}
+
 	subscription.Email = req.Email
 	subscription.Nid = req.Nid
 	subscription.GenerateSubToken()
@@ -44,7 +52,7 @@ func RemoveSubscription(c *fiber.Ctx, db *sql.DB) error {
 		})
 	}
 	if sub.SubToken != token {
-		return c.Status(fiber.StatusInternalServerError).JSON(&fiber.Map{
+		return c.Status(fiber.StatusUnauthorized).JSON(&fiber.Map{
 			"error" : "Tokens do not match",
 		})
 	}
@@ -54,5 +62,5 @@ func RemoveSubscription(c *fiber.Ctx, db *sql.DB) error {
 			"error" : "Error unsubscribing",
 		})
 	}
-	return c.SendStatus(fiber.StatusUnauthorized)
+	return c.SendStatus(fiber.StatusOK)
 }
