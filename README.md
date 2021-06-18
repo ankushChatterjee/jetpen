@@ -14,6 +14,19 @@ This is a simple fullstack newsletter management application to learn and teach 
 7. Send the saved draft letter.
 8. See all your past sent letters.
 
+## Folder structure
+1. jetpen-frontend/ -> The frontendcode
+2. services/ -> Backend services
+3. nginx/ -> Nginx config and Dockerfile
+
+## Dev setup
+Build the individual services images and the nginx image, after that run :
+```
+docker-compose up
+```
+
+In the dev setup we are also using `smtp4dev` to have a development email server.
+
 ## Backend Architecture
 
 In this section, we see the backend of the application. 
