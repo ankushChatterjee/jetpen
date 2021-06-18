@@ -22,13 +22,16 @@ In this section, we see the backend of the application.
 
 ### Components of the Architecture
 
-1. Database - PostgreSQL
-2. Queueing Service - RabbitMQ
-3. Microservices
+1. Database - PostgreSQL 🐘
+2. Queueing Service - RabbitMQ 🐰
+3. Microservices ⚙
     1. Email Service - Sends emails to user, reading from a queue.
     2. Newsletter Service - Handles saving, editing, deleting newsletters and letters.
     3. Sub service - Handles subscriptions and unsubscribe
     4. User service - User authentication and user profile management
+4. nginx as a API Gateway
+5. Backend Language - Go 💙
+6. Library - gofiber ⚡
 
 ### Database DDL
 Used by : `User Service`
@@ -63,8 +66,8 @@ ADD CONSTRAINT letter_nid_fkey
 
 Used by : `Sub service`
 ```
-create table jetpen.subscription(id uuid, 
-								email varchar(50) not null, nid uuid not null, "CreatedAt" timestamp default current_timestamp, subToken varchar(512),primary key(id), FOREIGN key(nid) REFERENCES jetpen.newsletter(id));
+create table jetpen.subscription(id uuid, email varchar(50) not null, nid uuid not null, "CreatedAt" timestamp default current_timestamp, subToken varchar(512),primary key(id), FOREIGN key(nid) REFERENCES jetpen.newsletter(id));
+
 create index idx_jetpen_subscription_nid_email on jetpen.subscription(nid, email);
 ```
 
@@ -73,3 +76,4 @@ For frontend we use :
 1. React
 2. React Router
 3. Ant Design
+4. Create React App for tooling and starting template
