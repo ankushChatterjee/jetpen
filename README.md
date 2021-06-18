@@ -43,8 +43,7 @@ create table jetpen.temp_users(username varchar(50) primary key, email varchar(5
 
 Used by : `Newsletter Service`
 ```
-create table jetpen.newsletter
-				(id uuid DEFAULT uuid_generate_v4(), name varchar(50)not null, 
+create table jetpen.newsletter (id uuid DEFAULT uuid_generate_v4(), name varchar(50)not null, 
 				description varchar(500), 
 				owner varchar(50) not null,
 				"CreatedAt" timestamp default current_timestamp,
@@ -52,10 +51,7 @@ create table jetpen.newsletter
 			
 			
 CREATE INDEX idx_jetpen_newsletter ON jetpen.newsletter ("CreatedAt", id, owner);
-create table jetpen.letter(id uuid, 
-							subject varchar(200) not null, owner varchar(50) not null, content text,
-							 nid uuid not null, "CreatedAt" timestamp default current_timestamp, "isPublished" boolean,
-							"PublishedAt" timestamp,primary key(id), FOREIGN key(owner) REFERENCES jetpen.users(username) ON DELETE CASCADE, FOREIGN key(nid) REFERENCES jetpen.newsletter(id)); 					
+create table jetpen.letter(id uuid, subject varchar(200) not null, owner varchar(50) not null, content text, nid uuid not null, "CreatedAt" timestamp default current_timestamp, "isPublished" boolean, "PublishedAt" timestamp,primary key(id), FOREIGN key(owner) REFERENCES jetpen.users(username) ON DELETE CASCADE, FOREIGN key(nid) REFERENCES jetpen.newsletter(id)); 					
 CREATE INDEX idx_jetpen_letter ON jetpen.letter ("CreatedAt", id);
 ADD CONSTRAINT letter_nid_fkey
     FOREIGN KEY (nid)
@@ -67,7 +63,6 @@ ADD CONSTRAINT letter_nid_fkey
 Used by : `Sub service`
 ```
 create table jetpen.subscription(id uuid, email varchar(50) not null, nid uuid not null, "CreatedAt" timestamp default current_timestamp, subToken varchar(512),primary key(id), FOREIGN key(nid) REFERENCES jetpen.newsletter(id));
-
 create index idx_jetpen_subscription_nid_email on jetpen.subscription(nid, email);
 ```
 
@@ -76,4 +71,4 @@ For frontend we use :
 1. React
 2. React Router
 3. Ant Design
-4. Create React App for tooling and starting template
+4. create react app for tooling and starting template.
